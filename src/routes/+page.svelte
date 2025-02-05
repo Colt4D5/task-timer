@@ -1,6 +1,8 @@
 <script>
   import { tasks } from '$stores/TaskList.svelte';
   import { enhance } from '$app/forms';
+  import { formatTime } from '$utils';
+	import TaskChart from '$components/TaskChart.svelte';
 
   let name = $state('');
   let description = $state('');
@@ -22,43 +24,42 @@
     tasks.remove = taskId;
   }
 
-  function formatTime(elapsedTime) {
-    // const ms = elapsedTime % 1000;
-    const seconds = Math.floor(elapsedTime / 1000) % 60;
-    const minutes = Math.floor(elapsedTime / (1000 * 60)) % 60;
-    const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
-
-    const format = (num, digits) => num.toString().padStart(digits, '0');
-    return `${format(hours, 2)}:${format(minutes, 2)}:${format(seconds, 2)}`;
-  }
-
   function clearInputFields() {
     name = '';
     description = '';
   }
 </script>
 
+<svelte:head>
+	<title>{tasks.documentTitle}</title>
+</svelte:head>
+
 <h1>Time Tracker™</h1>
 
-<form {onsubmit}>
-  <fieldset>
-    <input
-      name="name"
-      placeholder="Task name"
-      bind:value={name}
-    />
-    <input
-      name="description"
-      placeholder="Task Description (optional)"
-      bind:value={description}
-    />
-    
-    <input
-      type="submit"
-      value="Add Task"
-    />
-  </fieldset>
-</form>
+<div id="form-graph-container" class="flex items-end">
+  <form {onsubmit} class="w-full">
+    <fieldset class="mb-0">
+      <input
+        name="name"
+        placeholder="Task name"
+        bind:value={name}
+      />
+      <input
+        name="description"
+        placeholder="Task Description (optional)"
+        bind:value={description}
+      />
+      
+      <input
+        type="submit"
+        value="Add Task"
+        class="!mb-0"
+      />
+    </fieldset>
+  </form>
+
+  <TaskChart />
+</div>
 
 <table class="w-full">
   <thead>

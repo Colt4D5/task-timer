@@ -1,4 +1,6 @@
 import { browser } from '$app/environment';
+import { formatTime } from '$utils';
+import Chart from 'chart.js/auto';
 
 class TaskList {
   #tasks = $state([]);
@@ -6,15 +8,30 @@ class TaskList {
   #startTime = $state(null);
   #isRunning = $state(false);
   #intervalId = $state(null);
-  #documentTitle = $state('Time Tracker™');
+  documentTitle = $state('Time Tracker™');
+  #chartElement = $state(null);
+  chart = $state(null);
   constructor() {
     if (browser) {
+      this.updateDocumentTitle('Time Tracker™');
       this.initializeTasksFromLocalStorage();
+      window.addEventListener('beforeunload', () => {
+        this.stopTimer();
+      });
+      setTimeout(() => {
+        if (this.#chartElement) {
+          this.initializeChart();
+        }
+      }, 1000);
     }
+  }
+  set chartElement(element) {
+    this.#chartElement = element;
   }
   set tasks(task) {
     this.#tasks.push(task);
     this.updateLocalStorage();
+    this.initializeChart();
   }
   get tasks() {
     return this.#tasks;
@@ -26,13 +43,29 @@ class TaskList {
     const tasks = this.#tasks.map(task => task);
     return tasks.sort((a, b) => b.timestamp - a.timestamp);
   }
+  get uniqueTasks() {
+    // get unique tasks by name
+    const uniqueTasks = [];
+    this.#tasks.forEach(task => {
+      if (!uniqueTasks.find(uniqueTask => uniqueTask.name === task.name)) {
+        uniqueTasks.push(task);
+      }
+    });
+    return uniqueTasks;
+  }
+  get totalTrackedTime() {
+    return this.#tasks.reduce((total, task) => total + task.elapsedTime, 0);
+  }
   set remove(taskId) {
     const index = this.tasks.map(task => task.id).indexOf(taskId);
     this.#tasks.splice(index, 1);
     this.updateLocalStorage();
+    this.initializeChart();
   }
   startTimer(task) {
-    this.stopTimer();
+    if (this.#isRunning) {
+      this.stopTimer();
+    }
     this.#activeTask = task;
     this.#isRunning = true;
     this.#startTime = task.elapsedTime;
@@ -51,6 +84,7 @@ class TaskList {
     this.#isRunning = false;
     this.#intervalId = null;
     this.updateDocumentTitle('Time Tracker™');
+    this.initializeChart();
   }
   updateLocalStorage() {
     localStorage.setItem('tasks', JSON.stringify(this.#tasks));
@@ -62,8 +96,51 @@ class TaskList {
     }
   }
   updateDocumentTitle(title) {
-    this.#documentTitle = title;
-    document.title = this.#documentTitle;
+    this.documentTitle = title;
+  }
+  get taskTime() {
+    const taskTime = this.#tasks.reduce((acc, task) => {
+      if (acc[task.name]) {
+        acc[task.name] += task.elapsedTime;
+      } else {
+        acc[task.name] = task.elapsedTime;
+      }
+      return acc;
+    }, {});
+    return taskTime;
+  }
+  initializeChart() {
+    const data = {
+      labels: Object.keys(this.taskTime),
+      datasets: [{
+        label: 'Tasks',
+        data: Object.values(this.taskTime),
+        hoverOffset: 4
+      }],
+      // options: {
+      //   plugins: {
+      //     datalabels: {
+      //       formatter: function(value, context) {
+      //         console.log(value, context);
+      //         return context.chart.data.labels[context.dataIndex];
+      //       }
+      //     }
+      //   }
+      // }
+    };
+    this.chart?.destroy();
+    if (this.#chartElement) {
+      this.chart = new Chart(
+        this.#chartElement,
+        {
+          type: 'pie',
+          data: data
+        }
+      );
+    }
+  }
+  updateChart() {
+    this.initializeChart();
   }
 }
 
