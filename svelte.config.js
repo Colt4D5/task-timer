@@ -8,6 +8,7 @@ const config = {
 			'$stores': 'src/lib/stores',
 			'$components': 'src/lib/components',
 			'$utils': 'src/lib/utils',
+			'$assets': 'src/lib/assets',
 		}
 	}
 };

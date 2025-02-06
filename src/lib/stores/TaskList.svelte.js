@@ -22,7 +22,7 @@ class TaskList {
         if (this.#chartElement) {
           this.initializeChart();
         }
-      }, 1000);
+      }, 200);
     }
   }
   set chartElement(element) {
@@ -31,7 +31,16 @@ class TaskList {
   set tasks(task) {
     this.#tasks.push(task);
     this.updateLocalStorage();
-    this.initializeChart();
+    this.updateChart();
+    // this.initializeChart();
+  }
+  // create a setter method that will update a single task in this.#tasks by the parameter taskId 
+  set updateTask(task) {
+    const index = this.#tasks.map(task => task.id).indexOf(task.id);
+    this.#tasks[index] = task;
+    this.updateLocalStorage();
+    this.updateChart();
+    // this.initializeChart();
   }
   get tasks() {
     return this.#tasks;
@@ -60,7 +69,18 @@ class TaskList {
     const index = this.tasks.map(task => task.id).indexOf(taskId);
     this.#tasks.splice(index, 1);
     this.updateLocalStorage();
-    this.initializeChart();
+    this.updateChart();
+    // this.initializeChart();
+  }
+  edit(task) {
+    const index = this.#tasks.map(task => task.id).indexOf(task.id);
+    this.#tasks[index] = task;
+    this.updateLocalStorage();
+    this.updateChart();
+    // this.initializeChart();
+  }
+  getTaskById(taskId) {
+    return this.#tasks.find(task => task.id === taskId);
   }
   startTimer(task) {
     if (this.#isRunning) {
@@ -74,6 +94,7 @@ class TaskList {
       elapsedTime += 1000;
       this.#activeTask.elapsedTime = elapsedTime;
       this.updateDocumentTitle(`${new Date(elapsedTime).toISOString().slice(11, 19)} - ${this.#activeTask.name}`);
+      this.updateChart();
     }, 1000);
   }
   stopTimer() {
@@ -84,7 +105,8 @@ class TaskList {
     this.#isRunning = false;
     this.#intervalId = null;
     this.updateDocumentTitle('Time Tracker™');
-    this.initializeChart();
+    this.updateChart();
+    // this.initializeChart();
   }
   updateLocalStorage() {
     localStorage.setItem('tasks', JSON.stringify(this.#tasks));
@@ -110,37 +132,39 @@ class TaskList {
     return taskTime;
   }
   initializeChart() {
+    const formattedData = Object.values(this.taskTime).map(timestamp => formatTime(timestamp));
     const data = {
       labels: Object.keys(this.taskTime),
       datasets: [{
-        label: 'Tasks',
+        // label: 'Time',
         data: Object.values(this.taskTime),
+        // data: formattedData,
         hoverOffset: 4
       }],
-      // options: {
-      //   plugins: {
-      //     datalabels: {
-      //       formatter: function(value, context) {
-      //         console.log(value, context);
-      //         return context.chart.data.labels[context.dataIndex];
-      //       }
-      //     }
-      //   }
-      // }
     };
     this.chart?.destroy();
     if (this.#chartElement) {
       this.chart = new Chart(
         this.#chartElement,
         {
-          type: 'pie',
+          type: 'doughnut',
           data: data
         }
       );
     }
+    this.updateChart();
   }
   updateChart() {
-    this.initializeChart();
+    const newLabels = Object.keys(this.taskTime);
+    const newData = Object.values(this.taskTime);
+    if (this.chart) {
+      this.chart.data.labels = newLabels;
+      this.chart.data.datasets.forEach((dataset) => {
+        dataset.data = newData;
+      });
+      this.chart.update();
+    }
+    // this.initializeChart();
   }
 }
 
