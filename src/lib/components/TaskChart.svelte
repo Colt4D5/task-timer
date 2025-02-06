@@ -9,12 +9,7 @@
   })
 </script>
 
-<div class="max-w-64">
+<div class="max-w-64 text-center">
   <canvas id="task-chart" bind:this={chart}></canvas>
+  <p class="mb-0">Total tracked time: {formatTime(tasks.totalTrackedTime)}</p>
 </div>
-
-<!-- {#each tasks.uniqueTasks as project}
-  <p>{project.name}</p>
-{/each}
-
-<p>Total tracked time: {formatTime(tasks.totalTrackedTime)}</p> -->
